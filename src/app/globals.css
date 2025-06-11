@@ -1,26 +1,90 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Warna utama */
+    --background: 40.0 87.0% 89.0%; /* FAEDCA - Krem sangat terang */
+    --foreground: 0 0% 15%; /* Abu-abu gelap untuk teks, kontras baik pada latar belakang krem */
+
+    /* Warna kartu dan popover */
+    --card: 0 0% 100%; /* Putih bersih untuk kartu, kontras pada latar belakang krem */
+    --card-foreground: 0 0% 3.9%; /* Teks gelap pada kartu putih */
+    --popover: 0 0% 100%; /* Putih */
+    --popover-foreground: 0 0% 3.9%; /* Teks gelap */
+
+    /* Warna aksen utama (Primary) */
+    --primary: 16 98.4% 57.3%; /* FE5D26 - Oranye utama yang cerah */
+    --primary-foreground: 0 0% 100%; /* Putih untuk teks di atas oranye utama */
+
+    /* Warna aksen sekunder (Secondary) */
+    --secondary: 35.4 76.0% 71.0%; /* F2C078 - Oranye muda/emas */
+    --secondary-foreground: 0 0% 9%; /* Teks gelap pada aksen sekunder */
+
+    /* Warna muted (untuk elemen yang lebih halus) */
+    --muted: 35.4 76.0% 71.0%; /* Menggunakan F2C078 untuk elemen muted */
+    --muted-foreground: 0 0% 45.1%; /* Abu-abu sedang untuk teks muted */
+
+    /* Warna aksen umum (Accent) */
+    --accent: 35.4 76.0% 71.0%; /* Menggunakan F2C078 untuk aksen umum */
+    --accent-foreground: 0 0% 9%; /* Teks gelap */
+
+    /* Warna destruktif (misalnya untuk tombol hapus) */
+    --destructive: 0 84.2% 60.2%; /* Merah standar */
+    --destructive-foreground: 0 0% 98%; /* Putih */
+
+    /* Warna border dan input */
+    --border: 40.0 87.0% 75%; /* Sedikit lebih gelap dari latar belakang krem untuk border */
+    --input: 40.0 87.0% 75%; /* Sama dengan border untuk input */
+    --ring: 16 98.4% 57.3%; /* Menggunakan oranye utama untuk ring fokus */
+
+    --radius: 0.5rem;
+  }
+  .dark {
+    /* Anda bisa mendefinisikan tema gelap di sini jika diperlukan,
+       tetapi untuk saat ini, kita fokus pada tema terang yang Anda berikan. */
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: inherit;
+  }
 }
+
+/* Pastikan font Poppins tetap diterapkan */
+html {
+  font-family: var(--font-poppins), sans-serif;
+}
+
+/* app/globals.css */
+
