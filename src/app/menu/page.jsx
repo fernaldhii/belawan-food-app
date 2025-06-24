@@ -196,9 +196,11 @@ export default function MenuSection({ navbarActualHeight = DEFAULT_NAVBAR_HEIGHT
   };
 
   const filteredItems =
-    selectedCategory === "All"
-      ? menuItems
-      : menuItems.filter((item) => item.category === selectedCategory);
+  selectedCategory === "All"
+    ? menuItems
+    : menuItems.filter((item) => item.category === selectedCategory);
+
+
 
   const handleOpenModal = (item) => {
     setSelectedItem(item);
@@ -405,41 +407,57 @@ export default function MenuSection({ navbarActualHeight = DEFAULT_NAVBAR_HEIGHT
             ) : (
               <AnimatePresence>
                 {filteredItems.length > 0 ? (
-                  filteredItems.map((item) => (
-                    <motion.div
-                      key={item.id}
-                      layout
-                      initial="hidden"
-                      animate="visible"
-                      exit="hidden"
-                      variants={cardVariants}
-                      transition={{ duration: 0.3 }}
-                      className="bg-white rounded-md shadow-sm overflow-hidden flex flex-col relative hover:shadow-md transform hover:-translate-y-1 transition-all duration-300"
-                    >
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-32 object-cover"
-                        onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/160x160/E0E0E0/333333?text=${item.name.replace(/\s/g, '+')}`; }}
-                      />
-                      <div className="p-4 relative flex-grow">
-                        <div className="flex-grow md:min-h-[72px] pb-12">
-                          <h3 className="text-sm md:text-md font-normal text-gray-800 mb-1.5 md:whitespace-nowrap md:overflow-hidden md:text-ellipsis">
-                            {item.name}
-                          </h3>
-                          <p className="text-orange-600 font-semibold text-md">{getDisplayPrice(item)}</p>
+                  filteredItems.map((item) => {
+                    const isOutOfStock = item.isAvailable === false;
+
+                    return (
+                      <motion.div
+                        key={item.id}
+                        layout
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
+                        variants={cardVariants}
+                        transition={{ duration: 0.3 }}
+                        className={`
+                          bg-white rounded-md shadow-sm overflow-hidden flex flex-col relative
+                          ${isOutOfStock ? 'opacity-50 grayscale pointer-events-none' : 'hover:shadow-md transform hover:-translate-y-1'}
+                          transition-all duration-300
+                        `}
+                      >
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-full h-32 object-cover"
+                          loading="lazy"
+                          onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/160x160/E0E0E0/333333?text=${item.name.replace(/\s/g, '+')}`; }}
+                        />
+                        <div className="p-4 relative flex-grow">
+                          <div className="flex-grow md:min-h-[72px] pb-12">
+                            <h3 className="text-sm md:text-md font-normal text-gray-800 mb-1.5 md:whitespace-nowrap md:overflow-hidden md:text-ellipsis">
+                              {item.name}
+                            </h3>
+                            <p className="text-orange-600 font-semibold text-md">{getDisplayPrice(item)}</p>
+                          </div>
+
+                          {!isOutOfStock ? (
+                            <button
+                              onClick={() => handleOpenModal(item)}
+                              className="w-12 h-12 bg-orange-500 flex items-center justify-center text-white py-2 rounded-full shadow-lg hover:bg-orange-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500/50 absolute bottom-4 right-4"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                              </svg>
+                            </button>
+                          ) : (
+                            <div className="absolute bottom-4 right-4 bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md">
+                              Stok Habis
+                            </div>
+                          )}
                         </div>
-                        <button
-                          onClick={() => handleOpenModal(item)}
-                          className="w-12 h-12 bg-orange-500 flex items-center justify-center text-white py-2 rounded-full shadow-lg hover:bg-orange-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-orange-500/50 absolute bottom-4 right-4"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                          </svg>
-                        </button>
-                      </div>
-                    </motion.div>
-                  ))
+                      </motion.div>
+                    );
+                  })
                 ) : (
                   <div className="col-span-full text-center text-gray-600 text-lg py-10">
                     Tidak ada menu di kategori ini.
@@ -486,6 +504,7 @@ export default function MenuSection({ navbarActualHeight = DEFAULT_NAVBAR_HEIGHT
             }}
             exit={{ opacity: 0 }}
             className="object-cover"
+            loading="lazy" // <<< Tambahkan lazy loading untuk animasi juga
             onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/30x30/E0E0E0/333333?text=X`; }}
           />
         )}

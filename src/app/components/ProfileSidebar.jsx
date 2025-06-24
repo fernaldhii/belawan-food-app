@@ -221,6 +221,13 @@ export default function ProfileSidebar({ isOpen, onClose }) {
                     <img src="https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png" alt="Google" className="w-5 h-5 mr-3" />
                     Login Google
                   </button>
+                                    <button
+                    onClick={handleFoodOnCartClick}
+                    className="w-full mt-6 py-3 px-4 rounded-lg font-semibold md:hidden bg-white border-2 border-orange-500 text-orange-500 hover:bg-orange-50 transition shadow-md text-base sm:text-lg flex items-center justify-center space-x-2"
+                  >
+                    <FaShoppingCart className="w-5 h-5" />
+                    <span>Food on Cart</span>
+                  </button>
                 </div>
               )}
             </motion.div>

@@ -131,7 +131,7 @@ export default function CartPage() {
 
     let whatsappMessage = "";
     let whatsappUrl = "";
-    const whatsappPhoneNumber = "6287834968097"; // Nomor WhatsApp penjual
+    const whatsappPhoneNumber = "6287781235300"; // Nomor WhatsApp penjual
 
     // Data dasar pesanan untuk Firestore dan Google Sheets
     const itemsToSave = cart.map(item => {
@@ -184,21 +184,45 @@ export default function CartPage() {
       // Buka WhatsApp hanya untuk opsi 'Antar'
       window.open(whatsappUrl, '_blank');
 
-    } else { // deliveryOption === 'dineIn' (Makan di Tempat)
-        // Validasi minimal untuk opsi 'Makan di Tempat'
-        if (!currentDeliveryDetails.name) {
-          showCustomMessageBox("Detail Pemesan Belum Lengkap", "Mohon masukkan Nama Lengkap Anda untuk pesanan Makan di Tempat.", "error");
-          return;
-        }
-        // Atur detail pengiriman khusus untuk dine-in agar tersimpan di Firestore/Sheets
-        currentDeliveryDetails = {
-            name: currentDeliveryDetails.name || 'Makan di Tempat (Pelanggan)', 
-            address: 'Makan di Tempat',
-            phone: 'Tidak Ada (Makan di Tempat)', 
-            notes: currentDeliveryDetails.notes || '',
-        };
-        // Tidak ada pesan WhatsApp yang dibuat atau dibuka untuk 'Makan di Tempat'
+} else { // deliveryOption === 'dineIn' (Makan di Tempat)
+    if (!currentDeliveryDetails.name) {
+      showCustomMessageBox("Detail Pemesan Belum Lengkap", "Mohon masukkan Nama Lengkap Anda untuk pesanan Makan di Tempat.", "error");
+      return;
     }
+
+    currentDeliveryDetails = {
+        name: currentDeliveryDetails.name || 'Makan di Tempat (Pelanggan)', 
+        address: 'Makan di Tempat',
+        phone: 'Tidak Ada (Makan di Tempat)', 
+        notes: currentDeliveryDetails.notes || '',
+    };
+
+    // Kirim juga ke WhatsApp meskipun dineIn
+    whatsappMessage = "Halo, saya ingin melakukan pesanan Makan di Tempat:\n\n";
+    whatsappMessage += "Daftar Pesanan:\n";
+    cart.forEach(item => {
+      let optionsText = '';
+      const safeSelectedOptions = item.selectedOptions || {};
+      if (Object.keys(safeSelectedOptions).length > 0) {
+        optionsText = ` (${Object.entries(safeSelectedOptions)
+          .map(([key, value]) => `${value}`)
+          .join(', ')})`;
+      }
+      whatsappMessage += `- ${item.name}${optionsText} x ${item.quantity} = Rp ${(item.price * item.quantity).toLocaleString('id-ID')}\n`;
+    });
+    whatsappMessage += "---------------------------\n";
+    whatsappMessage += `Total: Rp ${getTotalPrice().toLocaleString('id-ID')}\n\n`;
+    whatsappMessage += `Nama Pemesan: ${currentDeliveryDetails.name}\n`;
+    if (currentDeliveryDetails.notes) {
+      whatsappMessage += `Catatan: ${currentDeliveryDetails.notes}\n`;
+    }
+    whatsappMessage += "\nTerima kasih!";
+
+    const encodedMessage = encodeURIComponent(whatsappMessage);
+    whatsappUrl = `https://wa.me/${whatsappPhoneNumber}?text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
+}
+
 
     // --- Data pesanan umum untuk Firestore (akan disimpan di dua lokasi) ---
     const baseOrderData = {

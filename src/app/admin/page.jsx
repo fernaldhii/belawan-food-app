@@ -4,7 +4,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CartContext } from '../components/CartContext'; 
-import { collection, query, onSnapshot, updateDoc, doc, deleteDoc } from 'firebase/firestore'; 
+import { collection, query, onSnapshot, updateDoc, doc, deleteDoc, documentId } from 'firebase/firestore'; 
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -28,12 +28,16 @@ export default function AdminDashboardPage() {
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  const [loginLoading, setLoginLoading] = useState(false); // <<< PERBAIKAN DI SINI
+  const [loginLoading, setLoginLoading] = useState(false); 
   const [loginError, setLoginError] = useState('');
 
   // State untuk konfirmasi penghapusan
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
+
+  // State baru untuk Cloudinary image upload
+  const [newMenuItemImage, setNewMenuItemImage] = useState(null); // State untuk file gambar yang dipilih
+  const [uploadingImage, setUploadingImage] = useState(false); // State untuk indikator loading upload
 
   // --- Konfigurasi Email Admin yang Diizinkan ---
   const ALLOWED_ADMIN_EMAILS = ['belawanbloks@gmail.com']; 
@@ -111,12 +115,104 @@ export default function AdminDashboardPage() {
       };
     }
   }, [isAdmin, db, appIdentifier, checkedAuth]); 
+    // Efek untuk memeriksa status autentikasi dan otorisasi admin
+  useEffect(() => {
+    console.log("Admin Dashboard (AUTH): useEffect triggered.");
+    console.log("Admin Dashboard (AUTH): isAuthReady:", isAuthReady);
+    console.log("Admin Dashboard (AUTH): checkedAuth:", checkedAuth);
+    console.log("Admin Dashboard (AUTH): user:", user);
+    console.log("Admin Dashboard (AUTH): user.email:", user?.email); 
+    console.log("Admin Dashboard (AUTH): ALLOWED_ADMIN_EMAILS (normalized):", ALLOWED_ADMIN_EMAILS);
+
+    if (checkedAuth) {
+      console.log("Admin Dashboard (AUTH): Initial Firebase Auth check is complete.");
+      
+      if (user && user.email && !user.isAnonymous) {
+        console.log("Admin Dashboard (AUTH): User is logged in with email:", user.email);
+        const normalizedUserEmail = user.email.toLowerCase(); 
+        const userIsAdmin = ALLOWED_ADMIN_EMAILS.includes(normalizedUserEmail); 
+        setIsAdmin(userIsAdmin);
+        console.log("Admin Dashboard (AUTH): Is this user an admin?", userIsAdmin);
+        
+        if (userIsAdmin) {
+          setShowLoginForm(false);
+          setLoadingAuth(false);
+        } else {
+          console.log("Admin Dashboard (AUTH): User is not an admin. Showing access denied.");
+          setLoadingAuth(false);
+        }
+      } else {
+        console.log("Admin Dashboard (AUTH): No authenticated user or anonymous user. Showing login form.");
+        setShowLoginForm(true);
+        setLoadingAuth(false);
+      }
+    } else {
+      console.log("Admin Dashboard (AUTH): Waiting for checkedAuth to be true.");
+      setLoadingAuth(true);
+    }
+  }, [checkedAuth, user, ALLOWED_ADMIN_EMAILS]); 
+
+  // Efek untuk mengambil data pesanan dari Firestore (hanya jika admin dan data siap)
+  useEffect(() => {
+    if (isAdmin && db && appIdentifier && checkedAuth) { 
+      console.log("Admin Dashboard (DEBUG): Setting up real-time listener for orders.");
+      const ordersCollectionRef = collection(db, `artifacts/${appIdentifier}/public/data/all_orders`);
+      
+      // Menggunakan query tanpa orderBy untuk menghindari kebutuhan indeks tambahan
+      const q = query(ordersCollectionRef); 
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const fetchedOrders = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          // Pastikan firestoreOrderId ada di data, atau fallback ke doc.id jika tidak ada
+          firestoreOrderId: doc.data().firestoreOrderId || doc.id, 
+          timestamp: doc.data().timestamp?.toDate ? doc.data().timestamp.toDate().toLocaleString() : doc.data().timestamp 
+        }));
+        // Sortir data di frontend jika diperlukan, karena orderBy Firestore dihindari
+        fetchedOrders.sort((a, b) => new Date(b.orderTime) - new Date(a.orderTime)); 
+
+        setOrders(fetchedOrders);
+        setLoadingOrders(false);
+        console.log("Admin Dashboard (DEBUG): Orders fetched:", fetchedOrders.length);
+      }, (error) => {
+        console.error("Admin Dashboard (ERROR): Error fetching orders:", error);
+        setLoadingOrders(false);
+        showCustomMessageBox("Error", `Gagal memuat pesanan: ${error.message}`, "error");
+      });
+
+      return () => {
+        console.log("Admin Dashboard (DEBUG): Unsubscribed from orders listener.");
+        unsubscribe();
+      };
+    }
+  }, [isAdmin, db, appIdentifier, checkedAuth]); 
+
+    // Tambahan state untuk menu
+  const [menuItems, setMenuItems] = useState([]);
+  const [loadingMenu, setLoadingMenu] = useState(true);
+
+  // Ambil data menu dari Firestore
+  useEffect(() => {
+    if (isAdmin && db && appIdentifier && checkedAuth) {
+      const menuRef = collection(db, `artifacts/${appIdentifier}/public/data/menu_items`);
+      const unsubscribe = onSnapshot(menuRef, (snapshot) => {
+        const items = snapshot.docs.map(doc => ({
+          documentId: doc.id,  // Ini document ID Firestore sebenarnya
+          ...doc.data()
+        }));
+        setMenuItems(items);
+        setLoadingMenu(false);
+      });
+      return () => unsubscribe();
+    }
+  }, [isAdmin, db, appIdentifier, checkedAuth]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!auth) return;
     
-    setLoginLoading(true); // Menggunakan setLoginLoading yang benar
+    setLoginLoading(true); 
     setLoginError('');
     
     try {
@@ -136,7 +232,7 @@ export default function AdminDashboardPage() {
       console.error("Admin Login Error:", error);
       setLoginError('Login gagal. Periksa email dan password Anda.');
     } finally {
-      setLoginLoading(false); // Menggunakan setLoginLoading yang benar
+      setLoginLoading(false); 
     }
   };
 
@@ -171,10 +267,9 @@ export default function AdminDashboardPage() {
     setMessageBoxType('info');
   };
 
-  const GOOGLE_APPS_SCRIPT_URL = '/api/apps-script'; // URL yang sama dengan di cart/page.jsx
+  const GOOGLE_APPS_SCRIPT_URL = '/api/apps-script';
 
   const handleStatusChange = async (orderId, newStatus) => {
-    // Cari pesanan yang relevan dari state 'orders' untuk mendapatkan firestoreOrderId
     const orderToUpdate = orders.find(order => order.id === orderId);
     if (!orderToUpdate) {
       showCustomMessageBox("Error", "Pesanan tidak ditemukan di daftar.", "error");
@@ -182,8 +277,6 @@ export default function AdminDashboardPage() {
       return;
     }
 
-    // Pastikan kita menggunakan firestoreOrderId yang benar untuk Google Sheet
-    // Ini adalah ID yang diharapkan ada di kolom "Order ID (Firestore)" di Google Sheet
     const firestoreSheetId = orderToUpdate.firestoreOrderId; 
     
     if (!firestoreSheetId) {
@@ -205,7 +298,6 @@ export default function AdminDashboardPage() {
       console.log(`Status pesanan ${orderId} di Firestore diperbarui menjadi ${newStatus}.`);
 
       // 2. Kirim update ke Google Apps Script
-      // Jika status baru adalah 'Cancelled', kirim perintah DELETE ke Google Sheets
       if (newStatus === 'Cancelled') {
         try {
           console.log(`handleStatusChange: Sending DELETE signal to Google Sheets for order ID: ${firestoreSheetId}`);
@@ -215,12 +307,11 @@ export default function AdminDashboardPage() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              action: 'deleteOrder', // Menggunakan action deleteOrder
+              action: 'deleteOrder', 
               firestoreOrderId: firestoreSheetId,
             }),
           });
           const result = await response.json();
-          // Jika berhasil dihapus ATAU pesan menyatakan bahwa pesanan tidak ditemukan (berarti sudah dihapus)
           if (result.status === 'success' || (result.status === 'error' && result.message.includes('tidak ditemukan'))) { 
             showCustomMessageBox("Sukses", `Status pesanan ${orderId} berhasil dibatalkan dan dihapus dari Google Sheets.`, "success");
             console.log(`Pesanan ${orderId} berhasil dibatalkan dan dihapus dari Google Sheets (atau sudah tidak ada).`);
@@ -232,18 +323,17 @@ export default function AdminDashboardPage() {
           console.error("Error sending delete signal to Google Apps Script after cancellation:", sheetsError);
           showCustomMessageBox("Peringatan", `Pesanan dibatalkan di Firestore, tetapi gagal mengirim sinyal hapus ke Google Sheets (Jaringan): ${sheetsError.message}`, "warning");
         }
-      } else { // Untuk status selain 'Cancelled', kirim update status biasa
+      } else { 
         try {
           const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            // Payload untuk Apps Script untuk update status
             body: JSON.stringify({
-              action: 'updateStatus', // Tindakan yang diminta Apps Script
-              firestoreOrderId: firestoreSheetId, // <--- Gunakan ID Firestore yang akan ditemukan di Sheets
-              newStatus: newStatus,      // Status baru
+              action: 'updateStatus', 
+              firestoreOrderId: firestoreSheetId, 
+              newStatus: newStatus,      
             }),
           });
 
@@ -299,8 +389,6 @@ export default function AdminDashboardPage() {
       console.log(`Pesanan ${orderId} berhasil dihapus dari Firestore.`);
 
       // 2. Kirim sinyal hapus ke Google Apps Script
-      // Hanya coba hapus dari Sheets jika firestoreSheetId ada
-      // dan tambahkan penanganan sukses jika Apps Script melaporkan 'tidak ditemukan'
       if (firestoreSheetId) {
         try {
           const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
@@ -309,13 +397,12 @@ export default function AdminDashboardPage() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              action: 'deleteOrder', // Tindakan baru untuk Apps Script
-              firestoreOrderId: firestoreSheetId, // ID untuk menemukan baris di Sheets
+              action: 'deleteOrder', 
+              firestoreOrderId: firestoreSheetId, 
             }),
           });
 
           const result = await response.json();
-          // Jika berhasil dihapus ATAU pesan menunjukkan bahwa pesanan tidak ditemukan (berarti sudah dihapus/tidak ada)
           if (result.status === 'success' || (result.status === 'error' && result.message.includes('tidak ditemukan'))) {
             showCustomMessageBox("Sukses", `Pesanan ${orderId} berhasil dihapus dari Firestore dan Google Sheets.`, "success");
             console.log(`Pesanan ${orderId} berhasil dihapus dari Firestore dan Google Sheets (atau sudah tidak ada).`);
@@ -342,6 +429,84 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Fungsi untuk menangani perubahan input file gambar (Cloudinary)
+  const handleImageFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setNewMenuItemImage(e.target.files[0]);
+    } else {
+      setNewMenuItemImage(null);
+    }
+  };
+
+  // Fungsi untuk mengunggah gambar ke Cloudinary melalui API Route
+  const uploadImageToCloudinary = async () => {
+    if (!newMenuItemImage) {
+      showCustomMessageBox("Peringatan", "Pilih gambar terlebih dahulu.", "warning");
+      return null;
+    }
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', newMenuItemImage); // 'file' harus cocok dengan yang di API Route
+
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        showCustomMessageBox("Sukses", "Gambar berhasil diunggah!", "success");
+        setNewMenuItemImage(null); // Bersihkan input file setelah berhasil
+        return result.url; // Mengembalikan URL gambar Cloudinary
+      } else {
+        showCustomMessageBox("Error", `Gagal mengunggah gambar: ${result.message || 'Unknown error'}`, "error");
+        return null;
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      showCustomMessageBox("Error", `Terjadi kesalahan saat mengunggah gambar: ${error.message}`, "error");
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  // Contoh penggunaan: Misal Anda punya fungsi untuk menambahkan/mengedit menu item
+  // Di mana Anda akan memanggil uploadImageToCloudinary()
+  const handleSaveMenuItem = async () => {
+    let imageUrl = null;
+    if (newMenuItemImage) {
+      imageUrl = await uploadImageToCloudinary(); // Unggah gambar
+      if (!imageUrl) {
+        // Jika upload gagal, jangan lanjutkan penyimpanan item menu
+        return;
+      }
+    }
+    // Lanjutkan dengan menyimpan item menu ke Firestore, menggunakan imageUrl
+    // Misalnya: updateDoc(doc(db, 'menuItems', itemId), { image: imageUrl, ...otherFields });
+    // Atau addDoc jika menu item baru
+    console.log("URL gambar Cloudinary yang siap disimpan ke Firestore:", imageUrl);
+    showCustomMessageBox("Info", `Item menu akan disimpan dengan gambar: ${imageUrl}`, "info");
+    // ... logika penyimpanan Firestore Anda di sini.
+    // Contoh:
+    // try {
+    //   await addDoc(collection(db, `artifacts/${appIdentifier}/public/data/menu_items`), {
+    //     name: "Nama Item Baru",
+    //     price: 10000,
+    //     description: "Deskripsi item baru",
+    //     image: imageUrl, // URL gambar dari Cloudinary
+    //     // ... properti lain
+    //   });
+    //   showCustomMessageBox("Sukses", "Item menu baru berhasil ditambahkan!", "success");
+    // } catch (error) {
+    //   console.error("Error adding menu item:", error);
+    //   showCustomMessageBox("Error", `Gagal menambahkan item menu: ${error.message}`, "error");
+    // }
+  };
+
 
   const handleViewDetails = (order) => {
     setSelectedOrderId(order.id);
@@ -349,6 +514,21 @@ export default function AdminDashboardPage() {
 
   const handleCloseDetails = () => {
     setSelectedOrderId(null);
+  };
+  
+  const toggleAvailability = async (documentId, currentStatus) => {
+    try {
+      const menuRef = doc(db, `artifacts/${appIdentifier}/public/data/menu_items`, documentId);
+      await updateDoc(menuRef, { isAvailable: !currentStatus });
+      showCustomMessageBox(
+        "Sukses",
+        `Menu berhasil diperbarui menjadi ${!currentStatus ? 'Tersedia' : 'Stok Habis'}.`,
+        "success"
+      );
+    } catch (error) {
+      console.error("Gagal mengubah status menu:", error);
+      showCustomMessageBox("Error", `Gagal mengubah status menu: ${error.message}`, "error");
+    }
   };
 
   // Loading screen saat autentikasi belum selesai
@@ -561,10 +741,10 @@ export default function AdminDashboardPage() {
                         <option value="Completed">Selesai</option>
                         <option value="Cancelled">Dibatalkan</option>
                       </select>
-                      {order.status === 'Cancelled' && ( // Tombol delete hanya muncul jika status 'Cancelled'
+                      {order.status === 'Cancelled' && ( 
                         <button
                           onClick={() => confirmDelete(order)}
-                          className="ml-2 p-1 text-red-600 hover:text-red-800 rounded-md hover:bg-red-100 transition" // Menambahkan padding dan hover background
+                          className="ml-2 p-1 text-red-600 hover:text-red-800 rounded-md hover:bg-red-100 transition" 
                         >
                           <svg className="w-5 h-5 mt-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 1 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -578,6 +758,77 @@ export default function AdminDashboardPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Bagian Unggah Gambar Menu Baru (via Cloudinary) */}
+      <div className="mt-8 p-6 bg-white rounded-lg shadow-md max-w-7xl mx-auto">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Unggah Gambar Menu Baru (via Cloudinary)</h2>
+        <input 
+          type="file" 
+          accept="image/*" 
+          onChange={handleImageFileChange} 
+          className="block w-full text-sm text-gray-500
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-full file:border-0
+            file:text-sm file:font-semibold
+            file:bg-orange-50 file:text-orange-700
+            hover:file:bg-orange-100"
+          disabled={uploadingImage}
+        />
+        {newMenuItemImage && (
+          <p className="mt-2 text-sm text-gray-600">File dipilih: {newMenuItemImage.name}</p>
+        )}
+        <button
+          onClick={handleSaveMenuItem} // Panggil fungsi yang akan mengunggah gambar dan menyimpan data
+          className={`mt-4 px-6 py-2 rounded-md font-semibold transition
+            ${newMenuItemImage && !uploadingImage 
+              ? 'bg-orange-500 text-white hover:bg-orange-600' 
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          disabled={!newMenuItemImage || uploadingImage}
+        >
+          {uploadingImage ? 'Mengunggah...' : 'Unggah & Simpan Item Menu'}
+        </button>
+      </div>
+
+      <div className="mt-8 p-6 bg-white rounded-lg shadow-md max-w-7xl mx-auto">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Pengelolaan Stok Menu</h2>
+        {loadingMenu ? (
+          <p className="text-gray-600">Memuat menu...</p>
+        ) : menuItems.length === 0 ? (
+          <p className="text-gray-600">Belum ada menu yang tersedia.</p>
+        ) : (
+          <table className="min-w-full text-sm">
+            <thead className="text-left border-b">
+              <tr>
+                <th className="px-4 py-2">Nama Menu</th>
+                <th className="px-4 py-2">Kategori</th>
+                <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+            {menuItems.map((item) => (
+              <tr key={item.documentId}>
+                <td>{item.name}</td>
+                <td>{item.category || '-'}</td>
+                <td>
+                  {item.isAvailable ? 'Tersedia' : 'Stok Habis'}
+                </td>
+                <td>
+                  <button
+                    onClick={() => toggleAvailability(item.documentId, item.isAvailable)} // gunakan documentId disini
+                    className={`px-3 py-1 rounded-md text-white text-xs font-medium
+                      ${item.isAvailable ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'}`}
+                  >
+                    {item.isAvailable ? 'Tandai Stok Habis' : 'Tandai Tersedia'}
+                  </button>
+                </td>
+              </tr>
+            ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Modal Konfirmasi Hapus */}

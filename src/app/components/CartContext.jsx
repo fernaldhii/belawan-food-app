@@ -12,23 +12,17 @@ import { getFirestore, collection, addDoc, getDocs, onSnapshot, query } from 'fi
 export const CartContext = createContext();
 
 // --- KONFIGURASI FIREBASE ANDA ---
-const localFirebaseConfig = {
-  apiKey: "AIzaSyDp3-v-HU02vsUfPHpmNdetpUUB_DPyOK0",
-  authDomain: "umkm-belawan.firebaseapp.com",
-  projectId: "umkm-belawan",
-  storageBucket: "umkm-belawan.firebasestorage.app",
-  messagingSenderId: "952896654123",
-  appId: "1:952896654123:web:fcc246252e2e47e72c936e",
-  measurementId: "G-N8SQ9W5HR4"
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-const firebaseConfig = typeof window !== 'undefined' && typeof __firebase_config !== 'undefined'
-  ? JSON.parse(__firebase_config)
-  : localFirebaseConfig;
-
-const appIdentifier = typeof window !== 'undefined' && typeof __app_id !== 'undefined'
-  ? __app_id
-  : localFirebaseConfig.projectId;
+const appIdentifier = firebaseConfig.projectId;
 
 console.log("--- CartContext: Firebase Config Check ---");
 console.log("appIdentifier:", appIdentifier);

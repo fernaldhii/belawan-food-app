@@ -9,6 +9,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useRef, useContext } from 'react'; 
 import ProfileSidebar from './components/ProfileSidebar'; // Import ProfileSidebar
 import { AnimatePresence } from 'framer-motion'; // Import AnimatePresence
+import Footer from "./components/Footer";
 
 // Firebase imports (TIDAK ADA INISIALISASI GLOBAL DI SINI)
 // Inisialisasi Firebase ditangani di CartContext.jsx
@@ -34,7 +35,7 @@ export default function RootLayout({ children }) {
   const authListenerRef = useRef(null);
 
   // Deteksi halaman admin
-  const isAdminPage = pathname === '/admin'; 
+  const isAdminPage = pathname.startsWith('/admin'); // Gunakan startsWith untuk mencakup /admin/orders, dll.
   // Rute publik: '/login' dan '/admin'
   const publicRoutes = ['/login', '/admin']; 
 
@@ -123,7 +124,7 @@ export default function RootLayout({ children }) {
     } else {
       console.log("[Layout Redirect] DELAYING: Auth check not yet complete.");
     }
-  }, [isAuthChecked, user, pathname, router, isAdminPage]); 
+  }, [isAuthChecked, user, pathname, router, isAdminPage, publicRoutes]); // Ditambahkan publicRoutes sebagai dependency
 
 
   const [navbarHeight, setNavbarHeight] = useState(0);
@@ -136,6 +137,10 @@ export default function RootLayout({ children }) {
   const hideNavbar = pathname === '/login' || pathname === '/register'; 
   // Sembunyikan ProfileSidebar di halaman login/register, order-success, dan admin
   const shouldShowProfileSidebar = !hideNavbar && pathname !== '/order-success' && !isAdminPage; 
+  //Sembunuikan Footer di Halaman Admin
+  // Footer hanya tampil di halaman /menu
+  const showFooter = pathname === '/menu';
+
 
   // Komponen pembantu untuk mengkonsumsi CartContext untuk ProfileSidebar
   // Didefinisikan di dalam RootLayout agar CartContext berada dalam cakupan
@@ -143,7 +148,7 @@ export default function RootLayout({ children }) {
     const { isProfileSidebarOpen, toggleProfileSidebar } = useContext(CartContext);
     return (
       <AnimatePresence>
-        {isProfileSidebarOpen && (
+        {isProfileSidebarOpen && shouldShowProfileSidebar && ( // Tambahkan kondisi here
           <ProfileSidebar isOpen={isProfileSidebarOpen} onClose={toggleProfileSidebar} />
         )}
       </AnimatePresence>
@@ -153,6 +158,7 @@ export default function RootLayout({ children }) {
   // Tampilkan loading screen sampai autentikasi awal selesai dicek
   if (!isAuthChecked) {
     console.log("Layout: Displaying initial loading screen (waiting for auth listener setup).");
+    console.log("CURRENT PATHNAME:", pathname);
     return (
       <html lang="id">
         <head>
@@ -190,6 +196,8 @@ export default function RootLayout({ children }) {
 
           {/* Render ProfileSidebarConsumer di sini, sekarang ada dalam cakupan CartContext */}
           <ProfileSidebarConsumer />
+          {/* Render Footer hanya jika showFooter true */}
+          {showFooter && <Footer />}
         </CartProvider>
       </body>
     </html>

@@ -8,9 +8,9 @@ import { CartContext } from './CartContext';
 import { usePathname } from 'next/navigation';
 import { FaUserCircle } from 'react-icons/fa'; // Import ikon user
 
-export default function Navbar({ onHeightChange }) {
+export default function Navbar({ onHeightChange, isAdminPage }) { // Menerima prop isAdminPage
   // Ambil toggleProfileSidebar dari CartContext
-  const { cart, auth, user, isAuthReady, toggleProfileSidebar } = useContext(CartContext); 
+  const { cart, auth, user, isAuthReady, toggleProfileSidebar, getTotalItems } = useContext(CartContext); 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cart.reduce((sum, item) => sum + (item.selectedSizePrice || item.price || 0) * item.quantity, 0);
 
@@ -101,7 +101,8 @@ export default function Navbar({ onHeightChange }) {
     </svg>
   );
 
-  if (isLoginPage) {
+  // Jika di halaman login atau admin, return null agar navbar tidak dirender
+  if (isLoginPage || isAdminPage) {
     return null;
   }
 
@@ -120,12 +121,23 @@ export default function Navbar({ onHeightChange }) {
         }
       `}
     >
-      <Link href="/" className="text-xl md:text-2xl font-bold text-orange-600">
-        <img src="/images/belawan-logo.png" alt="logo-belawan" className="block md:hidden w-auto h-8"/>
-        <img src="/images/belawan-logo-pc.png" alt="logo-belawan" className="hidden md:block w-auto h-10"/>
-      </Link>
+      {/* Logo / Nama Aplikasi (Kiri) */}
+      <div className="flex items-center">
+        {isAdminPage ? ( // Tidak lagi diperlukan karena navbar admin sudah return null
+          <span className="flex-shrink-0 text-2xl font-bold text-orange-400">
+            Admin Panel
+          </span>
+        ) : (
+          <Link href="/" className="text-xl md:text-2xl font-bold text-orange-600">
+             <img src="/images/belawan-logo.png" alt="logo-belawan" className="block md:hidden w-auto h-8"/>
+             <img src="/images/belawan-logo-pc.png" alt="logo-belawan" className="hidden md:block w-auto h-10"/>
+          </Link>
+        )}
+      </div>
+
       <div className="flex items-center space-x-4 md:space-x-6">
-        {!isOrderSuccessPage && ( // Sembunyikan keranjang jika di halaman order-success
+        {/* Sembunyikan keranjang jika di halaman order-success ATAU admin */}
+        {!isOrderSuccessPage && !isAdminPage && ( 
           <div className="hidden md:block">
             {totalItems === 0 ? (
               <Link
@@ -209,36 +221,38 @@ export default function Navbar({ onHeightChange }) {
           </div>
         )}
         
-        {/* Ikon Daftar hanya ditampilkan jika TIDAK di halaman order-success */}
-        {!isOrderSuccessPage && (
+        {/* Sembunyikan ikon daftar/list jika di halaman order-success ATAU admin */}
+        {!isOrderSuccessPage && !isAdminPage && (
           <Link href="/order-success" className={`font-medium ${listIconTextColorClass}`}>
             {listIconSvg}
           </Link>
         )}
 
-        {/* Ikon Profil: Selalu ditampilkan setelah login page */}
-        <button // Ubah dari Link ke button
-          onClick={toggleProfileSidebar} // Memanggil fungsi toggle sidebar
-          className={`
-            flex items-center space-x-2 
-            font-medium 
-            ${profileIconTextColorClass}
-            hover:text-orange-600 
-            transition-colors duration-200
-            text-lg
-            p-2 rounded-full
-          `}
-          aria-label="Profil"
-        >
-          <FaUserCircle className="w-7 h-7" />
-          {isAuthReady && user ? (
-            <span className="hidden sm:inline">
-              {user.displayName || user.email || (user.isAnonymous ? "Guest" : user.phoneNumber) || "Pengguna"}
-            </span>
-          ) : (
-            <span className="hidden sm:inline">Memuat...</span>
-          )}
-        </button>
+        {/* Sembunyikan ikon Profil jika di halaman order-success ATAU admin */}
+        {!isOrderSuccessPage && !isAdminPage && (
+          <button // Ubah dari Link ke button
+            onClick={toggleProfileSidebar} // Memanggil fungsi toggle sidebar
+            className={`
+              flex items-center space-x-2 
+              font-medium 
+              ${profileIconTextColorClass}
+              hover:text-orange-600 
+              transition-colors duration-200
+              text-lg md:text-md
+              p-2 rounded-full
+            `}
+            aria-label="Profil"
+          >
+            <FaUserCircle className="w-7 h-7" />
+            {isAuthReady && user ? (
+              <span className="hidden sm:inline">
+                {user.displayName || user.email || (user.isAnonymous ? "Guest" : user.phoneNumber) || "Pengguna"}
+              </span>
+            ) : (
+              <span className="hidden sm:inline">Memuat...</span>
+            )}
+          </button>
+        )}
       </div>
     </motion.nav>
   );
