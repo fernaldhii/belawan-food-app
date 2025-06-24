@@ -59,7 +59,7 @@ try {
 }
 
 // Data menuItems awal untuk seeding (menggunakan ID yang Anda berikan)
-const seedMenuItems = [
+const seedMenuItems = [ /*
   { id: 'cumi-asam-manis', name: "Cumi Asam Manis", category: "Cumi/Udang", image: "https://placehold.co/160x160/FFA500/FFFFFF?text=Cumi",
     options: { spicyLevel: ["Biasa", "Pedas"], size: [{ label: "Kecil", price: 35000}, { label: "Besar", price: 40000}] } },
   { id: 'cumi-saus-padang', name: "Cumi Saus Padang", category: "Cumi/Udang", image: "https://placehold.co/160x160/FFA500/FFFFFF?text=Cumi",
@@ -137,7 +137,7 @@ const seedMenuItems = [
   { id: 'nasi-uduk', name: "Nasi Uduk", category: "Lain-lain", image: "https://placehold.co/160x160/FFA500/FFFFFF?text=Nasi", options: { }, price: 6000 },
   { id: 'tahu-tempe-goreng', name: "Tahu/Tempe Goreng", category: "Lain-lain", image: "https://placehold.co/160x160/FFA500/FFFFFF?text=Tahu", options: { }, price: 5000 },
   { id: 'sambal-hijau', name: "Sambal Hijau", category: "Lain-lain", image: "https://placehold.co/160x160/FFA500/FFFFFF?text=Sambal", options: { }, price: 5000 },
-];
+*/ ];
 
 
 // Data kategori awal untuk seeding
