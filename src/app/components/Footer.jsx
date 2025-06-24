@@ -6,7 +6,7 @@ import { FaWhatsapp, FaEnvelope} from 'react-icons/fa'; // Impor ikon yang diper
 
 export default function Footer() {
   // Ganti nomor WhatsApp ini dengan nomor yang Anda inginkan
-  const whatsappNumber = "6287834968097"; // Format internasional tanpa '+'
+  const whatsappNumber = "6287781235300"; // Format internasional tanpa '+'
 
   // URL WhatsApp untuk ikon logo di bagian bawah kanan
   // Menggunakan nomor CS untuk tautan ini
@@ -49,7 +49,7 @@ export default function Footer() {
                 rel="noopener noreferrer"
                 className="flex items-center hover:text-orange-600 transition-colors"
               >
-                <FaWhatsapp className="mr-2 text-green-500" /> 0877-3496-8097
+                <FaWhatsapp className="mr-2 text-green-500" /> 0877-8123-5300
               </a>
             </li>
           </ul>
