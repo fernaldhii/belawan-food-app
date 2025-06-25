@@ -88,11 +88,11 @@ export default function Navbar({ onHeightChange, isAdminPage }) { // Menerima pr
   let profileIconTextColorClass;
   // Di halaman keranjang atau order-success, selalu hitam
   // Di halaman menu (saat isAtTop=false), juga hitam
-  // Transparan hanya di halaman menu saat isAtTop=true
-  if (isCartPage || isOrderSuccessPage || (pathname === '/' || pathname === '/menu' && !isAtTop)) {
+  // Transparan di halaman Utama saat isAtTop=true
+  if (isCartPage || isOrderSuccessPage) {
     profileIconTextColorClass = 'text-gray-950';
-  } else { 
-    profileIconTextColorClass = 'text-white'; // Default putih (saat di menu hero transparan)
+  } else {
+    profileIconTextColorClass = isAtTop ? 'text-white' : 'text-gray-950';
   }
   
   const listIconSvg = (
