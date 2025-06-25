@@ -139,7 +139,7 @@ export default function RootLayout({ children }) {
   const shouldShowProfileSidebar = !hideNavbar && pathname !== '/order-success' && !isAdminPage; 
   //Sembunuikan Footer di Halaman Admin
   // Footer hanya tampil di halaman /menu
-  const showFooter = pathname === '/menu';
+  const showFooter = pathname === '/' || pathname === '/menu';
 
 
   // Komponen pembantu untuk mengkonsumsi CartContext untuk ProfileSidebar
