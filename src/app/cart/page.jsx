@@ -570,7 +570,7 @@ export default function CartPage() {
                   <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-4">Detail Pengiriman</h2>
                   <form className="space-y-4">
                     <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nama</label>
                       <input
                         type="text"
                         id="name"
@@ -581,19 +581,6 @@ export default function CartPage() {
                         placeholder="Masukkan nama lengkap Anda"
                         required
                       />
-                    </div>
-                    <div>
-                      <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">Alamat Pengiriman</label>
-                      <textarea
-                        id="address"
-                        name="address"
-                        value={deliveryDetails.address}
-                        onChange={handleInputChange}
-                        rows="3"
-                        className="w-full px-4 py-2 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500 bg-gray-100"
-                        placeholder="Jalan, Nomor Rumah, RT/RW, Kelurahan, Kecamatan, Kota"
-                        required
-                      ></textarea>
                     </div>
                     <div>
                       <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Nomor Telepon</label>
@@ -628,7 +615,7 @@ export default function CartPage() {
                   <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-4">Detail Pemesan</h2>
                   <form className="space-y-4">
                     <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nama</label>
                       <input
                         type="text"
                         id="name"
