@@ -39,7 +39,7 @@ export default function Footer() {
                 rel="noopener noreferrer"
                 className="flex items-center hover:text-orange-600 transition-colors"
               >
-                <FaEnvelope className="mr-2 text-green-500" /> belawanbloks@gmail.com (Sales)
+                <FaEnvelope className="mr-2 text-green-500" /> belawanbloks@gmail.com
               </a>
             </li>
             <li>
