@@ -211,9 +211,6 @@ export default function ProfileSidebar({ isOpen, onClose }) {
                   <p className="text-gray-600 text-md sm:text-md">
                     Untuk melihat dan menyimpan riwayat pesanan Anda, serta mengakses fitur akun penuh, silakan login atau daftar.
                   </p>
-                  <Link href="/login?mode=forceLogin" onClick={onClose} className="block w-full py-3 px-4 rounded-lg font-semibold bg-orange-500 text-white hover:bg-orange-600 transition shadow-md text-md sm:text-lg">
-                    Login / Daftar
-                  </Link>
                   <button
                     onClick={handleLoginGoogle}
                     className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-gray-700 hover:bg-gray-50 transition font-medium mt-4 text-md sm:text-lg"
