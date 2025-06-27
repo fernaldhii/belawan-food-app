@@ -634,7 +634,7 @@ export default function LoginPage() {
               }`}
               disabled={isLoading}
             >
-              Lewati Login
+              Lewati Langsung Pesan
             </button>
           )}
         </div> {/* Penutup div untuk Bagian Kanan: Form Login / Daftar */}
