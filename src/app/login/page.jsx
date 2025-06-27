@@ -354,7 +354,7 @@ export default function LoginPage() {
                   }`}
                 disabled={isLoading}
               >
-                Lansung Langsung Pesan
+                Lewati Langsung Pesan
               </button>
             </>
           )}
